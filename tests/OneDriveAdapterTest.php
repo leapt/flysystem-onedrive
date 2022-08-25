@@ -18,10 +18,10 @@ class OneDriveAdapterTest extends TestCase
     /** @var \NicolasBeauvais\FlysystemOneDrive\OneDriveAdapter */
     protected $oneDriveAdapter;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->graph = $this->getMockBuilder(Graph::class)->getMock();
-        $this->graphRequest = $this->getMockBuilder(GraphRequest::class)->getMock();
+        $this->graphRequest = $this->getMockBuilder(GraphRequest::class)->disableOriginalConstructor()->getMock();
 
         $this->graph->method('createRequest')->willReturn($this->graphRequest);
 
