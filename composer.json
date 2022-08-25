@@ -1,5 +1,6 @@
 {
-    "name": "hevelius/flysystem-onedrive",
+    "name": "leapt/flysystem-onedrive",
+    "type": "library",
     "description": "Flysystem Adapter for the OneDrive API",
     "keywords": [
         "flysystem-onedrive",
@@ -7,13 +8,17 @@
         "onedrive",
         "api"
     ],
-    "homepage": "https://github.com/hevelius/flysystem-onedrive",
+    "homepage": "https://github.com/leapt/flysystem-onedrive",
     "license": "MIT",
     "authors": [
         {
             "name": "Mario Perrotta",
             "email": "mario.perrotta@unimi.it",
             "role": "Developer"
+        },
+        {
+            "name": "Jonathan Scheiber",
+            "homepage": "https://github.com/jmsche"
         }
     ],
     "require": {
@@ -26,18 +31,12 @@
     },
     "autoload": {
         "psr-4": {
-            "MarioPerrotta\\FlysystemOneDrive\\": "src"
+            "Leapt\\FlysystemOneDrive\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "MarioPerrotta\\FlysystemOneDrive\\Test\\": "tests"
+            "Leapt\\FlysystemOneDrive\\Tests\\": "tests"
         }
-    },
-    "scripts": {
-        "test": "vendor/bin/phpunit"
-    },
-    "config": {
-        "sort-packages": true
     }
 }
