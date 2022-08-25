@@ -1,10 +1,12 @@
-## This package is based on the repo no more maintained by nicolasbeauvais.
+## This package is based on the repositories no more maintained by nicolasbeauvais & hevelius.
 
 # Flysystem adapter for the Microsoft OneDrive API
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/hevelius/flysystem-onedrive.svg?style=flat-square)](https://packagist.org/packages/hevelius/flysystem-onedrive)
-[![Build Status](https://img.shields.io/travis/hevelius/flysystem-onedrive/master.svg?style=flat-square)](https://travis-ci.org/hevelius/flysystem-onedrive)
-[![Total Downloads](https://img.shields.io/packagist/dt/hevelius/flysystem-onedrive.svg?style=flat-square)](https://packagist.org/packages/hevelius/flysystem-onedrive)
+[![Package version](https://img.shields.io/packagist/v/leapt/flysystem-onedrive.svg?style=flat-square)](https://packagist.org/packages/leapt/flysystem-onedrive)
+[![Build Status](https://img.shields.io/github/workflow/status/leapt/flysystem-onedrive/Continuous%20Integration/1.x?style=flat-square)](https://github.com/leapt/flysystem-onedrive/actions?query=workflow%3A%22Continuous+Integration%22)
+[![PHP Version](https://img.shields.io/packagist/php-v/leapt/flysystem-onedrive.svg?branch=1.x&style=flat-square)](https://travis-ci.org/leapt/flysystem-onedrive?branch=1.x)
+[![License](https://img.shields.io/badge/license-MIT-red.svg?style=flat-square)](LICENSE)
+[![Code coverage](https://img.shields.io/codecov/c/github/leapt/flysystem-onedrive?style=flat-square)](https://codecov.io/gh/leapt/flysystem-onedrive/branch/1.x)
 
 This package contains a [Flysystem](https://flysystem.thephpleague.com/) adapter for OneDrive. Under the hood, the [Microsoft Graph SDK](https://github.com/microsoftgraph/msgraph-sdk-php) is used.
 
@@ -12,18 +14,8 @@ This package contains a [Flysystem](https://flysystem.thephpleague.com/) adapter
 
 You can install the package via composer:
 
-``` bash
-composer require hevelius/flysystem-onedrive
-```
-or add direct this repo in composer.json
-
-```json
-"repositories": [
-        {
-            "url": "https://github.com/hevelius/flysystem-onedrive.git",
-            "type": "git"
-        }
-    ],
+```bash
+composer require leapt/flysystem-onedrive
 ```
 
 ## Usage
@@ -31,9 +23,9 @@ or add direct this repo in composer.json
 The first thing you need to do is get an authorization token for the Microsoft Graph API. For that you need to create an app on the [Microsoft Azure Portal](https://portal.azure.com/).
 
 ``` php
-use Microsoft\Graph\Graph;
 use League\Flysystem\Filesystem;
-use MarioPerrotta\FlysystemOneDrive\OneDriveAdapter;
+use Leapt\FlysystemOneDrive\OneDriveAdapter;
+use Microsoft\Graph\Graph;
 
 $graph = new Graph();
 $graph->setAccessToken('EwBIA8l6BAAU7p9QDpi...');
@@ -48,28 +40,14 @@ $adapter = new OneDriveAdapter($graph, 'special/approot');
 
 ## Changelog
 
-Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
+Please see [CHANGELOG](CHANGELOG-1.x.md) for more information what has changed recently.
 
 ## Testing
 
-``` bash
-$ composer test
+```bash
+vendor/bin/phpunit
 ```
-
-## Contributing
-
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
-## Security
-
-If you discover any security related issues, please email nicolasbeauvais1@gmail.com instead of using the issue tracker.
-
-## Credits
-
-- [Nicolas Beauvais](https://github.com/nicolasbeauvais)
-- [Mario Perrotta](https://github.com/hevelius)
-- [All Contributors](../../contributors)
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
