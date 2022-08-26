@@ -20,7 +20,7 @@ composer require leapt/flysystem-onedrive
 
 ## Usage
 
-The first thing you need to do is get an authorization token for the Microsoft Graph API. For that you need to create an app on the [Microsoft Azure Portal](https://portal.azure.com/).
+The first thing you need to do is get an authorization token for the Microsoft Graph API. For that you need to create an app on the [Microsoft Azure Portal](https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/app-registration?view=odsp-graph-online).
 
 ``` php
 use League\Flysystem\Filesystem;

@@ -5,106 +5,166 @@ declare(strict_types=1);
 namespace Leapt\FlysystemOneDrive;
 
 use ArrayObject;
-use League\Flysystem\Adapter\AbstractAdapter;
-use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Psr7\Utils;
 use League\Flysystem\Config;
+use League\Flysystem\DirectoryAttributes;
+use League\Flysystem\FileAttributes;
+use League\Flysystem\FilesystemAdapter;
+use League\Flysystem\PathPrefixer;
+use League\Flysystem\StorageAttributes;
+use League\Flysystem\UnableToCopyFile;
+use League\Flysystem\UnableToCreateDirectory;
+use League\Flysystem\UnableToDeleteDirectory;
+use League\Flysystem\UnableToDeleteFile;
+use League\Flysystem\UnableToMoveFile;
+use League\Flysystem\UnableToReadFile;
+use League\Flysystem\UnableToRetrieveMetadata;
+use League\Flysystem\UnableToSetVisibility;
+use League\Flysystem\UnableToWriteFile;
+use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use Microsoft\Graph\Graph;
 use Microsoft\Graph\Model;
 
-class OneDriveAdapter extends AbstractAdapter
+class OneDriveAdapter implements FilesystemAdapter
 {
-    use NotSupportingVisibilityTrait;
+    private PathPrefixer $prefixer;
+    private FinfoMimeTypeDetector $mimeTypeDetector;
 
-    /** @var \Microsoft\Graph\Graph */
-    protected $graph;
-
-    private $usePath;
-
-    public function __construct(Graph $graph, $prefix = 'root', $base = '/drive/', $usePath = true)
-    {
-        $this->graph = $graph;
-        $this->usePath = $usePath;
-
-        $this->setPathPrefix($base . $prefix . ($this->usePath ? ':' : ''));
+    public function __construct(
+        private readonly Graph $graph,
+        string $basePath = '/me/drive/root',
+        string $subdirectory = '',
+        private readonly bool $usePath = true,
+    ) {
+        $this->prefixer = new PathPrefixer($basePath . $subdirectory . ($this->usePath ? ':' : ''));
+        $this->mimeTypeDetector = new FinfoMimeTypeDetector();
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function write($path, $contents, Config $config)
+    public function fileExists(string $path): bool
     {
-        return $this->upload($path, $contents);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function writeStream($path, $resource, Config $config)
-    {
-        return $this->upload($path, $resource);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function update($path, $contents, Config $config)
-    {
-        return $this->upload($path, $contents);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function updateStream($path, $resource, Config $config)
-    {
-        return $this->upload($path, $resource);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function rename($path, $newPath): bool
-    {
-        $endpoint = $this->applyPathPrefix($path);
-
-        $patch = explode('/', $newPath);
-        $sliced = implode('/', \array_slice($patch, 0, -1));
-
         try {
-            $this->graph->createRequest('PATCH', $endpoint)
-                ->attachBody([
-                    'name'            => end($patch),
-                    'parentReference' => [
-                        'path' => $this->getPathPrefix() . (empty($sliced) ? '' : rtrim($sliced, '/') . '/'),
-                    ],
-                ])
-                ->execute();
-        } catch (\Exception $e) {
-            try {
-                $this->graph->createRequest('PATCH', $endpoint)
-                    ->attachBody([
-                        'name'            => end($patch),
-                        'parentReference' => [
-                            'path' => substr($this->getPathPrefix(), 3) . (empty($sliced) ? '' : rtrim($sliced, '/') . '/'),
-                        ],
-                    ])
-                    ->execute();
-            } catch (\Exception $e) {
-                return false;
-            }
+            $this->graph->createRequest('GET', $this->applyPathPrefix($path))->execute();
+
+            return true;
+        } catch (ClientException) {
+            return false;
+        }
+    }
+
+    public function directoryExists(string $path): bool
+    {
+        return $this->fileExists($path);
+    }
+
+    public function lastModified(string $path): FileAttributes
+    {
+        $location = $this->applyPathPrefix($path);
+        try {
+            $metadata = $this->getMetadata($location);
+        } catch (ClientException $e) {
+            throw UnableToRetrieveMetadata::lastModified($location, $e->getMessage());
         }
 
-        return true;
+        return new FileAttributes(
+            $path,
+            lastModified: $metadata->lastModified->getTimestamp(),
+        );
+    }
+
+    public function fileSize(string $path): FileAttributes
+    {
+        $location = $this->applyPathPrefix($path);
+        try {
+            $metadata = $this->getMetadata($location);
+        } catch (ClientException $e) {
+            throw UnableToRetrieveMetadata::fileSize($location, $e->getMessage());
+        }
+
+        return new FileAttributes(
+            $path,
+            fileSize: $metadata->fileSize,
+        );
+    }
+
+    public function mimeType(string $path): FileAttributes
+    {
+        return new FileAttributes(
+            $path,
+            mimeType: $this->mimeTypeDetector->detectMimeTypeFromPath($path),
+        );
+    }
+
+    public function setVisibility(string $path, string $visibility): void
+    {
+        throw UnableToSetVisibility::atLocation($path, 'Adapter does not support visibility controls.');
+    }
+
+    public function visibility(string $path): FileAttributes
+    {
+        // Noop
+        return new FileAttributes($path);
+    }
+
+    public function createDirectory(string $path, Config $config): void
+    {
+        $patch = explode('/', $path);
+        $sliced = implode('/', \array_slice($patch, 0, -1));
+
+        if (empty($sliced) && $this->usePath) {
+            $endpoint = str_replace(':/', '', $this->applyPathPrefix('') . '//children');
+        } else {
+            $endpoint = $this->applyPathPrefix($sliced) . ($this->usePath ? ':' : '') . '/children';
+        }
+
+        try {
+            $this->graph->createRequest('POST', $endpoint)->attachBody([
+                'name'   => end($patch),
+                'folder' => new ArrayObject(),
+            ])->execute();
+        } catch (ClientException $e) {
+            throw UnableToCreateDirectory::dueToFailure($path, $e);
+        }
+    }
+
+    public function delete(string $path): void
+    {
+        try {
+            $endpoint = $this->applyPathPrefix($path);
+            $this->graph->createRequest('DELETE', $endpoint)->execute();
+        } catch (ClientException $e) {
+            throw UnableToDeleteFile::atLocation($path, $e->getMessage());
+        }
+    }
+
+    public function deleteDirectory(string $path): void
+    {
+        try {
+            $endpoint = $this->applyPathPrefix($path);
+            $this->graph->createRequest('DELETE', $endpoint)->execute();
+        } catch (ClientException $e) {
+            throw UnableToDeleteDirectory::atLocation($path, $e->getMessage());
+        }
+    }
+
+    public function write(string $path, string $contents, Config $config): void
+    {
+        $this->upload($path, $contents);
     }
 
     /**
-     * {@inheritdoc}
+     * @param resource $contents
      */
-    public function copy($path, $newPath): bool
+    public function writeStream(string $path, $contents, Config $config): void
     {
-        $endpoint = $this->applyPathPrefix($path);
+        $this->upload($path, $contents);
+    }
 
-        $patch = explode('/', $newPath);
+    public function copy(string $source, string $destination, Config $config): void
+    {
+        $endpoint = $this->applyPathPrefix($source);
+
+        $patch = explode('/', $destination);
         $sliced = implode('/', \array_slice($patch, 0, -1));
 
         try {
@@ -112,97 +172,60 @@ class OneDriveAdapter extends AbstractAdapter
                 ->attachBody([
                     'name'            => end($patch),
                     'parentReference' => [
-                        'path' => $this->getPathPrefix() . (empty($sliced) ? '' : rtrim($sliced, '/') . '/'),
+                        'path' => $this->applyPathPrefix('') . (empty($sliced) ? '' : rtrim($sliced, '/') . '/'),
                     ],
                 ])
                 ->executeAsync();
             $promise->wait();
-        } catch (\Exception $e) {
-            return false;
+        } catch (ClientException $e) {
+            throw UnableToCopyFile::fromLocationTo($source, $destination, $e);
         }
-
-        return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function delete($path): bool
+    public function move(string $source, string $destination, Config $config): void
     {
-        $endpoint = $this->applyPathPrefix($path);
+        $endpoint = $this->applyPathPrefix($source);
 
-        try {
-            $this->graph->createRequest('DELETE', $endpoint)->execute();
-        } catch (\Exception $e) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function deleteDir($dirname): bool
-    {
-        return $this->delete($dirname);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function createDir($dirname, Config $config)
-    {
-        $patch = explode('/', $dirname);
+        $patch = explode('/', $destination);
         $sliced = implode('/', \array_slice($patch, 0, -1));
 
-        if (empty($sliced) && $this->usePath) {
-            $endpoint = str_replace(':/', '', $this->getPathPrefix()) . '/children';
-        } else {
-            $endpoint = $this->applyPathPrefix($sliced) . ($this->usePath ? ':' : '') . '/children';
-        }
-
         try {
-            $response = $this->graph->createRequest('POST', $endpoint)
+            $this->graph->createRequest('PATCH', $endpoint)
                 ->attachBody([
-                    'name'   => end($patch),
-                    'folder' => new ArrayObject(),
-                ])->execute();
-        } catch (\Exception $e) {
-            return false;
+                    'name'            => end($patch),
+                    'parentReference' => [
+                        'path' => $this->applyPathPrefix('') . (empty($sliced) ? '' : rtrim($sliced, '/') . '/'),
+                    ],
+                ])
+                ->execute();
+        } catch (ClientException) {
+            try {
+                $this->graph->createRequest('PATCH', $endpoint)
+                    ->attachBody([
+                        'name'            => end($patch),
+                        'parentReference' => [
+                            'path' => substr($this->applyPathPrefix(''), 3) . (empty($sliced) ? '' : rtrim($sliced, '/') . '/'),
+                        ],
+                    ])
+                    ->execute();
+            } catch (ClientException $e) {
+                throw UnableToMoveFile::fromLocationTo($source, $destination, $e);
+            }
         }
-
-        return $this->normalizeResponse($response->getBody(), $dirname);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function has($path)
+    public function read(string $path): string
     {
-        return $this->getMetadata($path);
+        $object = $this->readStream($path);
+
+        $contents = stream_get_contents($object);
+        fclose($object);
+        unset($object);
+
+        return $contents;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function read($path)
-    {
-        if (!$object = $this->readStream($path)) {
-            return false;
-        }
-
-        $object['contents'] = stream_get_contents($object['stream']);
-        fclose($object['stream']);
-        unset($object['stream']);
-
-        return $object;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function readStream($path)
+    public function readStream(string $path)
     {
         $path = $this->applyPathPrefix($path);
 
@@ -214,133 +237,63 @@ class OneDriveAdapter extends AbstractAdapter
 
             $stream = fopen($file, 'r');
             unlink($file);
-        } catch (\Exception $e) {
-            return false;
-        }
 
-        return compact('stream');
+            return $stream;
+        } catch (\Exception $e) {
+            throw UnableToReadFile::fromLocation($path, $e->getMessage());
+        }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function listContents($directory = '', $recursive = false): array
+    public function listContents(string $path = '', bool $deep = false): iterable
     {
-        if ('' === $directory && $this->usePath) {
-            $endpoint = str_replace(':/', '', $this->getPathPrefix()) . '/children';
+        if ('' === $path && $this->usePath) {
+            $endpoint = str_replace(':/', '', $this->applyPathPrefix('') . '//children');
         } else {
-            $endpoint = $this->applyPathPrefix($directory) . ($this->usePath ? ':' : '') . '/children';
+            $endpoint = $this->applyPathPrefix($path) . ($this->usePath ? ':' : '') . '/children';
         }
 
-        try {
-            $results = [];
-            $response = $this->graph->createRequest('GET', $endpoint)->execute();
-            $items = $response->getBody()['value'];
+        $response = $this->graph->createRequest('GET', $endpoint)->execute();
+        $items = $response->getBody()['value'];
+        $results = [];
 
-            if (!\count($items)) {
-                return [];
+        foreach ($items as $item) {
+            $results[] = $this->normalizeResponse($item, $this->applyPathPrefix($path));
+
+            if ($deep && isset($item['folder'])) {
+                $results = array_merge($results, $this->listContents($path . '/' . $item['name'], true));
             }
-
-            foreach ($items as &$item) {
-                $results[] = $this->normalizeResponse($item, $this->applyPathPrefix($directory));
-
-                if ($recursive && isset($item['folder'])) {
-                    $results = array_merge($results, $this->listContents($directory . '/' . $item['name'], true));
-                }
-            }
-        } catch (\Exception $e) {
-            return [];
         }
 
         return $results;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getMetadata($path)
+    private function applyPathPrefix(string $path): string
     {
-        if ('' === $path && $this->usePath) {
-            $path = str_replace(':/', '', $this->getPathPrefix()) . '/children';
-        } else {
-            $path = $this->applyPathPrefix($path);
-        }
-
-        try {
-            $response = $this->graph->createRequest('GET', $path)->execute();
-        } catch (\Exception $e) {
-            return false;
-        }
-
-        return $this->normalizeResponse($response->getBody(), $path);
+        return '/' . trim($this->prefixer->prefixPath($path), '/');
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getSize($path)
-    {
-        return $this->getMetadata($path);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getMimetype($path)
-    {
-        return $this->getMetadata($path);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getTimestamp($path)
-    {
-        return $this->getMetadata($path);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function applyPathPrefix($path): string
-    {
-        $path = parent::applyPathPrefix($path);
-
-        return '/' . trim($path, '/');
-    }
-
-    public function getGraph(): Graph
-    {
-        return $this->graph;
-    }
-
-    /**
-     * @param resource|string $contents
-     *
-     * @return array|false file metadata
-     */
-    protected function upload(string $path, $contents)
+    private function upload(string $path, $contents)
     {
         $filename = basename($path);
         $path = $this->applyPathPrefix($path);
 
         try {
-            $contents = $stream = \GuzzleHttp\Psr7\stream_for($contents);
+            $contents = Utils::streamFor($contents);
 
             $file = $contents->getMetadata('uri');
-            $fileSize = filesize($file);
+            $fileSize = @filesize($file);
 
             if (4000000 < $fileSize) {
                 $uploadSession = $this->graph->createRequest('POST', $path . ($this->usePath ? ':' : '') . '/createUploadSession')
-                ->addHeaders(['Content-Type' => 'application/json'])
-                ->attachBody([
-                    'item' => [
-                        '@microsoft.graph.conflictBehavior' => 'rename',
-                        'name'                              => $filename,
-                    ],
-                ])
-                ->setReturnType(Model\UploadSession::class)
-                ->execute();
+                    ->addHeaders(['Content-Type' => 'application/json'])
+                    ->attachBody([
+                        'item' => [
+                            '@microsoft.graph.conflictBehavior' => 'rename',
+                            'name'                              => $filename,
+                        ],
+                    ])
+                    ->setReturnType(Model\UploadSession::class)
+                    ->execute();
 
                 $handle = fopen($file, 'r');
                 $fileNbByte = $fileSize - 1;
@@ -354,9 +307,9 @@ class OneDriveAdapter extends AbstractAdapter
                         $end = $fileNbByte;
                     }
 
-                    $stream = \GuzzleHttp\Psr7\stream_for($bytes);
+                    $stream = Utils::streamFor($bytes);
 
-                    $response = $this->graph->createRequest('PUT', $uploadSession->getUploadUrl())
+                    $this->graph->createRequest('PUT', $uploadSession->getUploadUrl())
                         ->addHeaders([
                             'Content-Length' => ($end + 1) - $start,
                             'Content-Range'  => 'bytes ' . $start . '-' . $end . '/' . $fileSize,
@@ -367,33 +320,45 @@ class OneDriveAdapter extends AbstractAdapter
 
                     $start = $end + 1;
                 }
-
-                return $this->normalizeResponse($response->getProperties(), $path);
             }
-            $response = $this->graph->createRequest('PUT', $path . ($this->usePath ? ':' : '') . '/content')
-            ->attachBody($contents)
-            ->execute();
 
-            return $this->normalizeResponse($response->getBody(), $path);
-        } catch (\Exception $e) {
-            return false;
+            $this->graph->createRequest('PUT', $path . ($this->usePath ? ':' : '') . '/content')
+                ->attachBody($contents)
+                ->execute();
+        } catch (ClientException $e) {
+            throw UnableToWriteFile::atLocation($path, $e->getMessage());
         }
     }
 
-    protected function normalizeResponse(array $response, string $path): array
+    private function getMetadata(string $path): OneDriveMetadata
+    {
+        $response = $this->graph->createRequest('GET', $path)->execute()->getBody();
+
+        return new OneDriveMetadata(
+            $response['size'],
+            new \DateTimeImmutable($response['lastModifiedDateTime']),
+        );
+    }
+
+    private function normalizeResponse(array $response, string $path): StorageAttributes
     {
         $path = str_replace('root/children', 'root:/children', $path);
-        $path = trim($this->removePathPrefix($path), '/');
+        $path = trim($this->prefixer->stripDirectoryPrefix($path), '/');
+        $path = empty($path) ? $response['name'] : $path . '/' . $response['name'];
 
-        return [
-            'path'      => empty($path) ? $response['name'] : $path . '/' . $response['name'],
-            'name'      => isset($response['name']) ? $response['name'] : null,
-            'timestamp' => isset($response['lastModifiedDateTime']) ? strtotime($response['lastModifiedDateTime']) : null,
-            'size'      => isset($response['size']) ? $response['size'] : null,
-            'bytes'     => isset($response['size']) ? $response['size'] : null,
-            'type'      => isset($response['file']) ? 'file' : 'dir',
-            'mimetype'  => isset($response['file']) ? $response['file']['mimeType'] : null,
-            'link'      => isset($response['webUrl']) ? $response['webUrl'] : null,
-        ];
+        if (isset($response['folder'])) {
+            return new DirectoryAttributes(
+                $path,
+                lastModified: strtotime($response['lastModifiedDateTime']),
+            );
+        }
+
+        return new FileAttributes(
+            $path,
+            $response['size'] ?? null,
+            null,
+            strtotime($response['lastModifiedDateTime']),
+            $this->mimeTypeDetector->detectMimeTypeFromPath($path),
+        );
     }
 }
