@@ -7,16 +7,17 @@ namespace Leapt\FlysystemOneDrive\Tests;
 use Leapt\FlysystemOneDrive\OneDriveAdapter;
 use Microsoft\Graph\Graph;
 use Microsoft\Graph\Http\GraphRequest;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class OneDriveAdapterTest extends TestCase
 {
-    /** @var \Microsoft\Graph\Http\GraphRequest|\PHPUnit_Framework_MockObject_MockObject */
+    /** @var \Microsoft\Graph\Http\GraphRequest|MockObject */
     public $graphRequest;
-    /** @var \Microsoft\Graph\Graph|\PHPUnit_Framework_MockObject_MockObject */
+    /** @var \Microsoft\Graph\Graph|MockObject */
     protected $graph;
 
-    /** @var \NicolasBeauvais\FlysystemOneDrive\OneDriveAdapter */
+    /** @var \Leapt\FlysystemOneDrive\OneDriveAdapter */
     protected $oneDriveAdapter;
 
     protected function setUp(): void

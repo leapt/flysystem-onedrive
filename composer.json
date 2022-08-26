@@ -27,16 +27,20 @@
         "microsoft/microsoft-graph": "^1.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.10",
+        "friendsofphp/php-cs-fixer": "^3.10.0",
+        "phpstan/phpstan-deprecation-rules": "^1.0.0",
+        "phpstan/phpstan": "^1.8.2",
         "phpunit/phpunit": "^9.5.23"
     },
     "scripts": {
         "ci": [
             "@cs:dry",
+            "@phpstan",
             "vendor/bin/phpunit --colors=auto"
         ],
         "cs:dry": "php-cs-fixer fix --diff --dry-run --no-interaction --ansi",
-        "cs:fix": "php-cs-fixer fix --ansi"
+        "cs:fix": "php-cs-fixer fix --ansi",
+        "phpstan": "vendor/bin/phpstan analyse --ansi"
     },
     "autoload": {
         "psr-4": {
