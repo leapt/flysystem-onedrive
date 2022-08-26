@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Leapt\FlysystemOneDrive;
 
 use ArrayObject;
-use Microsoft\Graph\Graph;
-use League\Flysystem\Config;
 use League\Flysystem\Adapter\AbstractAdapter;
 use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
+use League\Flysystem\Config;
+use Microsoft\Graph\Graph;
 use Microsoft\Graph\Model;
 
 class OneDriveAdapter extends AbstractAdapter
@@ -23,7 +25,7 @@ class OneDriveAdapter extends AbstractAdapter
         $this->graph = $graph;
         $this->usePath = $usePath;
 
-        $this->setPathPrefix($base.$prefix.($this->usePath ? ':' : ''));
+        $this->setPathPrefix($base . $prefix . ($this->usePath ? ':' : ''));
     }
 
     /**
@@ -66,31 +68,30 @@ class OneDriveAdapter extends AbstractAdapter
         $endpoint = $this->applyPathPrefix($path);
 
         $patch = explode('/', $newPath);
-        $sliced = implode('/', array_slice($patch, 0, -1));
+        $sliced = implode('/', \array_slice($patch, 0, -1));
 
         try {
             $this->graph->createRequest('PATCH', $endpoint)
                 ->attachBody([
-                    'name' => end($patch),
+                    'name'            => end($patch),
                     'parentReference' => [
-                        'path' => $this->getPathPrefix().(empty($sliced) ? '' : rtrim($sliced, '/').'/'),
-                    ]
+                        'path' => $this->getPathPrefix() . (empty($sliced) ? '' : rtrim($sliced, '/') . '/'),
+                    ],
                 ])
                 ->execute();
         } catch (\Exception $e) {
- 	    try {
-            $this->graph->createRequest('PATCH', $endpoint)
-                ->attachBody([
-                    'name' => end($patch),
-                    'parentReference' => [
-                        'path' => substr($this->getPathPrefix(), 3).(empty($sliced) ? '' : rtrim($sliced, '/').'/'),
-                    ]
-                ])
-                ->execute();
-
- 	    } catch (\Exception $e){
-		return false;
-  	    } 
+            try {
+                $this->graph->createRequest('PATCH', $endpoint)
+                    ->attachBody([
+                        'name'            => end($patch),
+                        'parentReference' => [
+                            'path' => substr($this->getPathPrefix(), 3) . (empty($sliced) ? '' : rtrim($sliced, '/') . '/'),
+                        ],
+                    ])
+                    ->execute();
+            } catch (\Exception $e) {
+                return false;
+            }
         }
 
         return true;
@@ -104,14 +105,14 @@ class OneDriveAdapter extends AbstractAdapter
         $endpoint = $this->applyPathPrefix($path);
 
         $patch = explode('/', $newPath);
-        $sliced = implode('/', array_slice($patch, 0, -1));
+        $sliced = implode('/', \array_slice($patch, 0, -1));
 
         try {
-            $promise = $this->graph->createRequest('POST', $endpoint.($this->usePath ? ':' : '').'/copy')
+            $promise = $this->graph->createRequest('POST', $endpoint . ($this->usePath ? ':' : '') . '/copy')
                 ->attachBody([
-                    'name' => end($patch),
+                    'name'            => end($patch),
                     'parentReference' => [
-                        'path' => $this->getPathPrefix().(empty($sliced) ? '' : rtrim($sliced, '/').'/'),
+                        'path' => $this->getPathPrefix() . (empty($sliced) ? '' : rtrim($sliced, '/') . '/'),
                     ],
                 ])
                 ->executeAsync();
@@ -153,18 +154,18 @@ class OneDriveAdapter extends AbstractAdapter
     public function createDir($dirname, Config $config)
     {
         $patch = explode('/', $dirname);
-        $sliced = implode('/', array_slice($patch, 0, -1));
+        $sliced = implode('/', \array_slice($patch, 0, -1));
 
         if (empty($sliced) && $this->usePath) {
-            $endpoint = str_replace(':/', '', $this->getPathPrefix()).'/children';
+            $endpoint = str_replace(':/', '', $this->getPathPrefix()) . '/children';
         } else {
-            $endpoint = $this->applyPathPrefix($sliced).($this->usePath ? ':' : '').'/children';
+            $endpoint = $this->applyPathPrefix($sliced) . ($this->usePath ? ':' : '') . '/children';
         }
 
         try {
             $response = $this->graph->createRequest('POST', $endpoint)
                 ->attachBody([
-                    'name' => end($patch),
+                    'name'   => end($patch),
                     'folder' => new ArrayObject(),
                 ])->execute();
         } catch (\Exception $e) {
@@ -187,7 +188,7 @@ class OneDriveAdapter extends AbstractAdapter
      */
     public function read($path)
     {
-        if (! $object = $this->readStream($path)) {
+        if (!$object = $this->readStream($path)) {
             return false;
         }
 
@@ -208,7 +209,7 @@ class OneDriveAdapter extends AbstractAdapter
         try {
             $file = tempnam(sys_get_temp_dir(), 'onedrive');
 
-            $this->graph->createRequest('GET', $path.($this->usePath ? ':' : '').'/content')
+            $this->graph->createRequest('GET', $path . ($this->usePath ? ':' : '') . '/content')
                 ->download($file);
 
             $stream = fopen($file, 'r');
@@ -225,10 +226,10 @@ class OneDriveAdapter extends AbstractAdapter
      */
     public function listContents($directory = '', $recursive = false): array
     {
-        if ($directory === '' && $this->usePath) {
-            $endpoint = str_replace(':/', '', $this->getPathPrefix()).'/children';
+        if ('' === $directory && $this->usePath) {
+            $endpoint = str_replace(':/', '', $this->getPathPrefix()) . '/children';
         } else {
-            $endpoint = $this->applyPathPrefix($directory).($this->usePath ? ':' : '').'/children';
+            $endpoint = $this->applyPathPrefix($directory) . ($this->usePath ? ':' : '') . '/children';
         }
 
         try {
@@ -236,7 +237,7 @@ class OneDriveAdapter extends AbstractAdapter
             $response = $this->graph->createRequest('GET', $endpoint)->execute();
             $items = $response->getBody()['value'];
 
-            if (! count($items)) {
+            if (!\count($items)) {
                 return [];
             }
 
@@ -244,7 +245,7 @@ class OneDriveAdapter extends AbstractAdapter
                 $results[] = $this->normalizeResponse($item, $this->applyPathPrefix($directory));
 
                 if ($recursive && isset($item['folder'])) {
-                    $results = array_merge($results, $this->listContents($directory.'/'.$item['name'], true));
+                    $results = array_merge($results, $this->listContents($directory . '/' . $item['name'], true));
                 }
             }
         } catch (\Exception $e) {
@@ -259,11 +260,11 @@ class OneDriveAdapter extends AbstractAdapter
      */
     public function getMetadata($path)
     {
-        if ($path === '' && $this->usePath) {
-            $path = str_replace(':/', '', $this->getPathPrefix()).'/children';
+        if ('' === $path && $this->usePath) {
+            $path = str_replace(':/', '', $this->getPathPrefix()) . '/children';
         } else {
             $path = $this->applyPathPrefix($path);
-	    }
+        }
 
         try {
             $response = $this->graph->createRequest('GET', $path)->execute();
@@ -305,7 +306,7 @@ class OneDriveAdapter extends AbstractAdapter
     {
         $path = parent::applyPathPrefix($path);
 
-        return '/'.trim($path, '/');
+        return '/' . trim($path, '/');
     }
 
     public function getGraph(): Graph
@@ -314,7 +315,6 @@ class OneDriveAdapter extends AbstractAdapter
     }
 
     /**
-     * @param string $path
      * @param resource|string $contents
      *
      * @return array|false file metadata
@@ -328,23 +328,23 @@ class OneDriveAdapter extends AbstractAdapter
             $contents = $stream = \GuzzleHttp\Psr7\stream_for($contents);
 
             $file = $contents->getMetadata('uri');
-            $fileSize = fileSize($file);
+            $fileSize = filesize($file);
 
-            if ($fileSize > 4000000) {
-                $uploadSession = $this->graph->createRequest("POST", $path.($this->usePath ? ':' : '')."/createUploadSession")
-                ->addHeaders(["Content-Type" => "application/json"])
+            if (4000000 < $fileSize) {
+                $uploadSession = $this->graph->createRequest('POST', $path . ($this->usePath ? ':' : '') . '/createUploadSession')
+                ->addHeaders(['Content-Type' => 'application/json'])
                 ->attachBody([
-                    "item" => [
-                        "@microsoft.graph.conflictBehavior" => "rename",
-                        "name" => $filename
-                    ]
+                    'item' => [
+                        '@microsoft.graph.conflictBehavior' => 'rename',
+                        'name'                              => $filename,
+                    ],
                 ])
                 ->setReturnType(Model\UploadSession::class)
                 ->execute();
 
                 $handle = fopen($file, 'r');
                 $fileNbByte = $fileSize - 1;
-                $chunkSize = 1024*1024*60;
+                $chunkSize = 1024 * 1024 * 60;
                 $fgetsLength = $chunkSize + 1;
                 $start = 0;
                 while (!feof($handle)) {
@@ -356,49 +356,44 @@ class OneDriveAdapter extends AbstractAdapter
 
                     $stream = \GuzzleHttp\Psr7\stream_for($bytes);
 
-                    $response = $this->graph->createRequest("PUT", $uploadSession->getUploadUrl())
+                    $response = $this->graph->createRequest('PUT', $uploadSession->getUploadUrl())
                         ->addHeaders([
                             'Content-Length' => ($end + 1) - $start,
-                            'Content-Range' => "bytes " . $start . "-" . $end . "/" . $fileSize
+                            'Content-Range'  => 'bytes ' . $start . '-' . $end . '/' . $fileSize,
                         ])
                         ->setReturnType(Model\UploadSession::class)
                         ->attachBody($stream)
                         ->execute();
-                
+
                     $start = $end + 1;
                 }
 
                 return $this->normalizeResponse($response->getProperties(), $path);
-
-            } else {
-                $response = $this->graph->createRequest('PUT', $path.($this->usePath ? ':' : '').'/content')
-                ->attachBody($contents)
-                ->execute();
-
-                return $this->normalizeResponse($response->getBody(), $path);
             }
-            
-       
+            $response = $this->graph->createRequest('PUT', $path . ($this->usePath ? ':' : '') . '/content')
+            ->attachBody($contents)
+            ->execute();
+
+            return $this->normalizeResponse($response->getBody(), $path);
         } catch (\Exception $e) {
             return false;
         }
-        
     }
 
     protected function normalizeResponse(array $response, string $path): array
     {
-	$path = str_replace("root/children","root:/children", $path);
+        $path = str_replace('root/children', 'root:/children', $path);
         $path = trim($this->removePathPrefix($path), '/');
 
         return [
-            'path' => empty($path) ? $response['name'] : $path.'/'.$response['name'],
-	        'name' => isset($response['name']) ? $response['name'] : null,
+            'path'      => empty($path) ? $response['name'] : $path . '/' . $response['name'],
+            'name'      => isset($response['name']) ? $response['name'] : null,
             'timestamp' => isset($response['lastModifiedDateTime']) ? strtotime($response['lastModifiedDateTime']) : null,
-            'size' => isset($response['size']) ? $response['size'] : null,
-            'bytes' => isset($response['size']) ? $response['size'] : null,
-            'type' => isset($response['file']) ? 'file' : 'dir',
-            'mimetype' => isset($response['file']) ? $response['file']['mimeType'] : null,
-            'link' => isset($response['webUrl']) ? $response['webUrl'] : null,
+            'size'      => isset($response['size']) ? $response['size'] : null,
+            'bytes'     => isset($response['size']) ? $response['size'] : null,
+            'type'      => isset($response['file']) ? 'file' : 'dir',
+            'mimetype'  => isset($response['file']) ? $response['file']['mimeType'] : null,
+            'link'      => isset($response['webUrl']) ? $response['webUrl'] : null,
         ];
     }
 }

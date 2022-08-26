@@ -27,7 +27,16 @@
         "microsoft/microsoft-graph": "^1.0"
     },
     "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.10",
         "phpunit/phpunit": "^9.5.23"
+    },
+    "scripts": {
+        "ci": [
+            "@cs:dry",
+            "vendor/bin/phpunit --colors=auto"
+        ],
+        "cs:dry": "php-cs-fixer fix --diff --dry-run --no-interaction --ansi",
+        "cs:fix": "php-cs-fixer fix --ansi"
     },
     "autoload": {
         "psr-4": {
