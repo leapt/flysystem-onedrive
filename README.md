@@ -1,5 +1,3 @@
-## This package is based on the repositories no more maintained by nicolasbeauvais & hevelius.
-
 # Flysystem adapter for the Microsoft OneDrive API
 
 [![Package version](https://img.shields.io/packagist/v/leapt/flysystem-onedrive.svg?style=flat-square)](https://packagist.org/packages/leapt/flysystem-onedrive)
@@ -12,7 +10,9 @@ This package contains a [Flysystem](https://flysystem.thephpleague.com/) adapter
 
 ## Installation
 
-You can install the package via composer:
+This package requires PHP 8.1+.
+
+You can install the package using composer:
 
 ```bash
 composer require leapt/flysystem-onedrive
@@ -20,9 +20,10 @@ composer require leapt/flysystem-onedrive
 
 ## Usage
 
-The first thing you need to do is get an authorization token for the Microsoft Graph API. For that you need to create an app on the [Microsoft Azure Portal](https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/app-registration?view=odsp-graph-online).
+The first thing you need to do is get an authorization token for the Microsoft Graph API. 
+For that you need to create an app on the [Microsoft Azure Portal](https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/app-registration?view=odsp-graph-online).
 
-``` php
+```php
 use League\Flysystem\Filesystem;
 use Leapt\FlysystemOneDrive\OneDriveAdapter;
 use Microsoft\Graph\Graph;
@@ -30,24 +31,36 @@ use Microsoft\Graph\Graph;
 $graph = new Graph();
 $graph->setAccessToken('EwBIA8l6BAAU7p9QDpi...');
 
-$adapter = new OneDriveAdapter($graph, 'root');
+$adapter = new OneDriveAdapter($graph);
 $filesystem = new Filesystem($adapter);
 
 // Or to use the approot endpoint:
 $adapter = new OneDriveAdapter($graph, 'special/approot');
 ```
 
-
 ## Changelog
 
 Please see [CHANGELOG](CHANGELOG-1.x.md) for more information what has changed recently.
 
-## Testing
+## Contributing
+
+Feel free to contribute, like sending [pull requests](https://github.com/leapt/flysystem-onedrive/pulls) to add features/tests
+or [creating issues](https://github.com/leapt/flysystem-onedrive/issues) :)
+
+Note there are a few helpers to maintain code quality, that you can run using these commands:
 
 ```bash
-vendor/bin/phpunit
+composer cs:dry # Code style check
+composer phpstan # Static analysis
+vendor/bin/phpunit # Run tests
 ```
 
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
+
+History
+-------
+
+This bundle is a maintained fork of the packages [nicolasbeauvais](https://github.com/nicolasbeauvais/flysystem-onedrive) 
+and [hevelius](https://github.com/hevelius/flysystem-onedrive).
