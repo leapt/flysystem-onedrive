@@ -281,7 +281,7 @@ class OneDriveAdapter implements FilesystemAdapter
             $contents = Utils::streamFor($contents);
 
             $file = $contents->getMetadata('uri');
-            $fileSize = @filesize($file);
+            $fileSize = $contents->getSize();
 
             if (4000000 < $fileSize) {
                 $uploadSession = $this->graph->createRequest('POST', $path . ($this->usePath ? ':' : '') . '/createUploadSession')
@@ -316,6 +316,7 @@ class OneDriveAdapter implements FilesystemAdapter
                         ])
                         ->setReturnType(Model\UploadSession::class)
                         ->attachBody($stream)
+                        ->setTimeout('0')
                         ->execute();
 
                     $start = $end + 1;
