@@ -10,7 +10,7 @@ This package contains a [Flysystem](https://flysystem.thephpleague.com/) adapter
 
 ## Installation
 
-This package requires PHP 8.1+.
+This package requires PHP 8.1+ and Flysystem v3.
 
 You can install the package using composer:
 
@@ -36,6 +36,51 @@ $filesystem = new Filesystem($adapter);
 
 // Or to use the approot endpoint:
 $adapter = new OneDriveAdapter($graph, 'special/approot');
+```
+
+### Retrieve a bearer token
+
+If you are looking for a way to retrieve a bearer token, here are two examples:
+
+* first example using [Symfony HTTP Client](https://symfony.com/doc/current/http_client.html)
+* second example using [Guzzle](https://github.com/guzzle/guzzle), which is already included as a dependency from Microsoft Graph SDK
+
+#### Using Symfony HTTP Client
+
+```php
+$tenantId = 'your tenant id';
+$clientId = 'your client id';
+$clientSecret = 'your client secret';
+$scope = 'https://graph.microsoft.com/.default';
+$oauthUrl = sprintf('https://login.microsoftonline.com/%s/oauth2/v2.0/token', $tenantId);
+
+$client = \Symfony\Component\HttpClient\HttpClient::create();
+$response = $client->request('GET', $oauthUrl, ['body' => [
+    'client_id'     => $clientId,
+    'scope'         => $scope,
+    'grant_type'    => 'client_credentials',
+    'client_secret' => $clientSecret,
+]]);
+$bearerToken = $response->toArray()['access_token'];
+```
+
+#### Using Guzzle
+
+```php
+$tenantId = 'your tenant id';
+$clientId = 'your client id';
+$clientSecret = 'your client secret';
+$scope = 'https://graph.microsoft.com/.default';
+$oauthUrl = sprintf('https://login.microsoftonline.com/%s/oauth2/v2.0/token', $tenantId);
+
+$client = new \GuzzleHttp\Client();
+$response = $client->request('POST', $oauthUrl, ['form_params' => [
+    'client_id'     => $clientId,
+    'scope'         => $scope,
+    'grant_type'    => 'client_credentials',
+    'client_secret' => $clientSecret,
+]]);
+$bearerToken = json_decode((string) $response->getBody(), true)['access_token'];
 ```
 
 ## Changelog
