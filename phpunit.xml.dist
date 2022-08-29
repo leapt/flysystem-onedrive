@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bootstrap="tests/bootstrap.php" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.5/phpunit.xsd">
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bootstrap="tests/bootstrap.php" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.5/phpunit.xsd" colors="true">
     <testsuites>
         <testsuite name="Leapt Flysystem OneDrive Test Suite">
             <directory>./tests/</directory>
@@ -14,6 +14,7 @@
         <exclude>
             <directory>./tests</directory>
             <directory>./vendor</directory>
+            <file>./.php-cs-fixer.dist.php</file>
         </exclude>
     </coverage>
 </phpunit>
