@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Leapt\FlysystemOneDrive;
 
-use ArrayObject;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Psr7\Utils;
 use League\Flysystem\Config;
@@ -120,7 +119,7 @@ class OneDriveAdapter implements FilesystemAdapter
         try {
             $this->graph->createRequest('POST', $endpoint)->attachBody([
                 'name'   => end($patch),
-                'folder' => new ArrayObject(),
+                'folder' => new \ArrayObject(),
             ])->execute();
         } catch (ClientException $e) {
             throw UnableToCreateDirectory::dueToFailure($path, $e);
@@ -316,7 +315,7 @@ class OneDriveAdapter implements FilesystemAdapter
                         ])
                         ->setReturnType(Model\UploadSession::class)
                         ->attachBody($stream)
-                        ->setTimeout('0')
+                        ->setTimeout(0)
                         ->execute();
 
                     $start = $end + 1;
