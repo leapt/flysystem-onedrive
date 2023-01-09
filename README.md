@@ -1,7 +1,7 @@
 # Flysystem adapter for the Microsoft OneDrive API
 
 [![Package version](https://img.shields.io/packagist/v/leapt/flysystem-onedrive.svg?style=flat-square)](https://packagist.org/packages/leapt/flysystem-onedrive)
-[![Build Status](https://img.shields.io/github/workflow/status/leapt/flysystem-onedrive/Continuous%20Integration/1.x?style=flat-square)](https://github.com/leapt/flysystem-onedrive/actions?query=workflow%3A%22Continuous+Integration%22)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/leapt/flysystem-onedrive/continuous-integration.yml?branch=1.x&style=flat-square)](https://github.com/leapt/flysystem-onedrive/actions?query=workflow%3A%22Continuous+Integration%22)
 [![PHP Version](https://img.shields.io/packagist/php-v/leapt/flysystem-onedrive.svg?branch=1.x&style=flat-square)](https://travis-ci.org/leapt/flysystem-onedrive?branch=1.x)
 [![License](https://img.shields.io/badge/license-MIT-red.svg?style=flat-square)](LICENSE)
 [![Code coverage](https://img.shields.io/codecov/c/github/leapt/flysystem-onedrive?style=flat-square)](https://codecov.io/gh/leapt/flysystem-onedrive/branch/1.x)
