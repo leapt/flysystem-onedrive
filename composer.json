@@ -30,7 +30,7 @@
         "friendsofphp/php-cs-fixer": "^3.69.0",
         "phpstan/phpstan-deprecation-rules": "^1.2.1",
         "phpstan/phpstan": "^1.12.18",
-        "phpunit/phpunit": "^9.6.22",
+        "phpunit/phpunit": "^12.0.3",
         "symfony/var-dumper": "^7.2"
     },
     "scripts": {

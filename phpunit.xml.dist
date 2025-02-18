@@ -7,14 +7,15 @@
         </testsuite>
     </testsuites>
 
-    <coverage>
+    <coverage/>
+
+    <source>
         <include>
             <directory>./</directory>
         </include>
         <exclude>
             <directory>./tests</directory>
             <directory>./vendor</directory>
-            <file>./.php-cs-fixer.dist.php</file>
         </exclude>
-    </coverage>
+    </source>
 </phpunit>
