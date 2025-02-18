@@ -22,16 +22,16 @@
         }
     ],
     "require": {
-        "php": "^8.1",
+        "php": "^8.3",
         "league/flysystem": "^3.0",
         "microsoft/microsoft-graph": "^1.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.10.0",
-        "phpstan/phpstan-deprecation-rules": "^1.0.0",
-        "phpstan/phpstan": "^1.8.2",
-        "phpunit/phpunit": "^9.5.23",
-        "symfony/var-dumper": "^6.1"
+        "friendsofphp/php-cs-fixer": "^3.69.0",
+        "phpstan/phpstan-deprecation-rules": "^1.2.1",
+        "phpstan/phpstan": "^1.12.18",
+        "phpunit/phpunit": "^9.6.22",
+        "symfony/var-dumper": "^7.2"
     },
     "scripts": {
         "ci": [
@@ -39,8 +39,8 @@
             "@phpstan",
             "vendor/bin/phpunit --colors=auto"
         ],
-        "cs:dry": "php-cs-fixer fix --diff --dry-run --no-interaction --ansi",
-        "cs:fix": "php-cs-fixer fix --ansi",
+        "cs:dry": "PHP_CS_FIXER_IGNORE_ENV=1 vendor/bin/php-cs-fixer fix --diff --dry-run --no-interaction --ansi",
+        "cs:fix": "PHP_CS_FIXER_IGNORE_ENV=1 vendor/bin/php-cs-fixer fix --ansi",
         "phpstan": "vendor/bin/phpstan analyse --ansi"
     },
     "autoload": {

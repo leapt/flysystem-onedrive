@@ -10,7 +10,7 @@ This package contains a [Flysystem](https://flysystem.thephpleague.com/) adapter
 
 ## Installation
 
-This package requires PHP 8.1+ and Flysystem v3.
+This package requires PHP 8.3+ and Flysystem v3.
 
 You can install the package using composer:
 
