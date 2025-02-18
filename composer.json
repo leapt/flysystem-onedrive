@@ -28,8 +28,8 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.69.0",
-        "phpstan/phpstan-deprecation-rules": "^1.2.1",
-        "phpstan/phpstan": "^1.12.18",
+        "phpstan/phpstan-deprecation-rules": "^2.0.1",
+        "phpstan/phpstan": "^2.1.5",
         "phpunit/phpunit": "^12.0.3",
         "symfony/var-dumper": "^7.2"
     },
