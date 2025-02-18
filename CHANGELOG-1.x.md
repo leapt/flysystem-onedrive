@@ -1,3 +1,8 @@
+1.1.0
+-----
+
+* Upgrade PHP requirement to 8.3+
+
 1.0.1
 -----
 
