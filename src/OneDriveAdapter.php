@@ -271,7 +271,10 @@ class OneDriveAdapter implements FilesystemAdapter
         return '/' . trim($this->prefixer->prefixPath($path), '/');
     }
 
-    private function upload(string $path, $contents)
+    /**
+     * @param string|resource $contents
+     */
+    private function upload(string $path, $contents): void
     {
         $filename = basename($path);
         $path = $this->applyPathPrefix($path);
@@ -340,6 +343,9 @@ class OneDriveAdapter implements FilesystemAdapter
         );
     }
 
+    /**
+     * @param array<mixed> $response
+     */
     private function normalizeResponse(array $response, string $path): StorageAttributes
     {
         $path = str_replace('root/children', 'root:/children', $path);
