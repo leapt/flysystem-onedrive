@@ -27,11 +27,11 @@
         "microsoft/microsoft-graph": "^1.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.69.0",
-        "phpstan/phpstan-deprecation-rules": "^2.0.1",
-        "phpstan/phpstan": "^2.1.5",
-        "phpunit/phpunit": "^12.0.3",
-        "symfony/var-dumper": "^7.2"
+        "friendsofphp/php-cs-fixer": "^3.86.0",
+        "phpstan/phpstan-deprecation-rules": "^2.0.3",
+        "phpstan/phpstan": "^2.1.22",
+        "phpunit/phpunit": "^12.3.7",
+        "symfony/var-dumper": "^7.3 || ^8.0"
     },
     "scripts": {
         "ci": [
@@ -39,8 +39,8 @@
             "@phpstan",
             "vendor/bin/phpunit --colors=auto"
         ],
-        "cs:dry": "PHP_CS_FIXER_IGNORE_ENV=1 vendor/bin/php-cs-fixer fix --diff --dry-run --no-interaction --ansi",
-        "cs:fix": "PHP_CS_FIXER_IGNORE_ENV=1 vendor/bin/php-cs-fixer fix --ansi",
+        "cs:dry": "vendor/bin/php-cs-fixer fix --diff --dry-run --no-interaction --ansi",
+        "cs:fix": "vendor/bin/php-cs-fixer fix --ansi",
         "phpstan": "vendor/bin/phpstan analyse --ansi"
     },
     "autoload": {
