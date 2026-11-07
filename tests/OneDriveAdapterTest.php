@@ -24,19 +24,19 @@ use Leapt\FlysystemOneDrive\OneDriveAdapter;
 use Microsoft\Graph\Graph;
 use Microsoft\Graph\Http\GraphRequest;
 use Microsoft\Graph\Http\GraphResponse;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 
 class OneDriveAdapterTest extends TestCase
 {
-    private Graph&MockObject $graph;
-    private GraphRequest&MockObject $graphRequest;
+    private Graph&Stub $graph;
+    private GraphRequest&Stub $graphRequest;
     private OneDriveAdapter $oneDriveAdapter;
 
     protected function setUp(): void
     {
-        $this->graph = $this->getMockBuilder(Graph::class)->getMock();
-        $this->graphRequest = $this->getMockBuilder(GraphRequest::class)->disableOriginalConstructor()->getMock();
+        $this->graph = self::createStub(Graph::class);
+        $this->graphRequest = self::createStub(GraphRequest::class);
         $this->graph->method('createRequest')->willReturn($this->graphRequest);
         $this->oneDriveAdapter = new OneDriveAdapter($this->graph);
     }
@@ -57,7 +57,7 @@ class OneDriveAdapterTest extends TestCase
 
     public function testLastModified(): void
     {
-        $response = $this->createMock(GraphResponse::class);
+        $response = self::createStub(GraphResponse::class);
         $response->method('getBody')->willReturn(['size' => 1000, 'lastModifiedDateTime' => '2022-01-01T01:00:00Z']);
         $this->graphRequest->method('execute')->willReturn($response);
         $fileAttributes = $this->oneDriveAdapter->lastModified('/sheet.xlsx');
@@ -71,7 +71,7 @@ class OneDriveAdapterTest extends TestCase
 
     public function testFileSize(): void
     {
-        $response = $this->createMock(GraphResponse::class);
+        $response = self::createStub(GraphResponse::class);
         $response->method('getBody')->willReturn(['size' => 1000, 'lastModifiedDateTime' => '2022-01-01T01:00:00Z']);
         $this->graphRequest->method('execute')->willReturn($response);
         $fileAttributes = $this->oneDriveAdapter->fileSize('/sheet.xlsx');
@@ -101,7 +101,7 @@ class OneDriveAdapterTest extends TestCase
 
     public function testCreateDirectory(): void
     {
-        $response = $this->createMock(GraphResponse::class);
+        $response = self::createStub(GraphResponse::class);
         $response->method('getBody')->willReturn([]);
         $this->graphRequest->method('execute')->willReturn($response);
         $this->graphRequest->method('attachBody')->willReturn($this->graphRequest);
@@ -114,7 +114,7 @@ class OneDriveAdapterTest extends TestCase
 
     public function testDelete(): void
     {
-        $response = $this->createMock(GraphResponse::class);
+        $response = self::createStub(GraphResponse::class);
         $response->method('getBody')->willReturn([]);
         $this->graphRequest->method('execute')->willReturn($response);
         $this->oneDriveAdapter->delete('/sheet.xlsx');
@@ -126,7 +126,7 @@ class OneDriveAdapterTest extends TestCase
 
     public function testDeleteDirectory(): void
     {
-        $response = $this->createMock(GraphResponse::class);
+        $response = self::createStub(GraphResponse::class);
         $response->method('getBody')->willReturn([]);
         $this->graphRequest->method('execute')->willReturn($response);
         $this->oneDriveAdapter->deleteDirectory('/test');
@@ -138,7 +138,7 @@ class OneDriveAdapterTest extends TestCase
 
     public function testWrite(): void
     {
-        $response = $this->createMock(GraphResponse::class);
+        $response = self::createStub(GraphResponse::class);
         $response->method('getBody')->willReturn([]);
         $this->graphRequest->method('execute')->willReturn($response);
         $this->graphRequest->method('attachBody')->willReturn($this->graphRequest);
@@ -151,7 +151,7 @@ class OneDriveAdapterTest extends TestCase
 
     public function testWriteStream(): void
     {
-        $response = $this->createMock(GraphResponse::class);
+        $response = self::createStub(GraphResponse::class);
         $response->method('getBody')->willReturn([]);
         $this->graphRequest->method('execute')->willReturn($response);
         $this->graphRequest->method('attachBody')->willReturn($this->graphRequest);
@@ -165,18 +165,18 @@ class OneDriveAdapterTest extends TestCase
 
     public function testCopy(): void
     {
-        $this->graphRequest->method('executeAsync')->willReturn($this->createMock(Promise::class));
+        $this->graphRequest->method('executeAsync')->willReturn(self::createStub(Promise::class));
         $this->graphRequest->method('attachBody')->willReturn($this->graphRequest);
         $this->oneDriveAdapter->copy('/test.txt', 'test2.txt', new Config());
 
         $this->expectException(UnableToCopyFile::class);
-        $this->graphRequest->method('executeAsync')->willThrowException(new ClientException('404', $this->createMock(Request::class), $this->createMock(Response::class)));
+        $this->graphRequest->method('executeAsync')->willThrowException(new ClientException('404', self::createStub(Request::class), self::createStub(Response::class)));
         $this->oneDriveAdapter->copy('/test.txt', 'test2.txt', new Config());
     }
 
     public function testMove(): void
     {
-        $response = $this->createMock(GraphResponse::class);
+        $response = self::createStub(GraphResponse::class);
         $response->method('getBody')->willReturn([]);
         $this->graphRequest->method('execute')->willReturn($response);
         $this->graphRequest->method('attachBody')->willReturn($this->graphRequest);
@@ -192,7 +192,7 @@ class OneDriveAdapterTest extends TestCase
         $this->oneDriveAdapter->read('/text.txt');
 
         $this->expectException(UnableToReadFile::class);
-        $this->graphRequest->method('download')->willThrowException(new ClientException('404', $this->createMock(Request::class), $this->createMock(Response::class)));
+        $this->graphRequest->method('download')->willThrowException(new ClientException('404', self::createStub(Request::class), self::createStub(Response::class)));
         $this->oneDriveAdapter->read('/text.txt');
     }
 
@@ -201,14 +201,14 @@ class OneDriveAdapterTest extends TestCase
         $this->oneDriveAdapter->readStream('/text.txt');
 
         $this->expectException(UnableToReadFile::class);
-        $this->graphRequest->method('download')->willThrowException(new ClientException('404', $this->createMock(Request::class), $this->createMock(Response::class)));
+        $this->graphRequest->method('download')->willThrowException(new ClientException('404', self::createStub(Request::class), self::createStub(Response::class)));
         $this->oneDriveAdapter->readStream('/text.txt');
     }
 
     public function testListContents(): void
     {
         $this->expectNotToPerformAssertions();
-        $response = $this->createMock(GraphResponse::class);
+        $response = self::createStub(GraphResponse::class);
         $response->method('getBody')->willReturn(['value' => []]);
         $this->graphRequest->method('execute')->willReturn($response);
         $this->oneDriveAdapter->listContents('/test');
@@ -216,6 +216,6 @@ class OneDriveAdapterTest extends TestCase
 
     private function makeGraphRequestExecuteMethodThrowException(): void
     {
-        $this->graphRequest->method('execute')->willThrowException(new ClientException('404', $this->createMock(Request::class), $this->createMock(Response::class)));
+        $this->graphRequest->method('execute')->willThrowException(new ClientException('404', self::createStub(Request::class), self::createStub(Response::class)));
     }
 }
