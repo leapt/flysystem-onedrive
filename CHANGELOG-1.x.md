@@ -1,3 +1,8 @@
+1.1.1
+-----
+
+* Fix `listContents()` only returning the first 200 items of a directory by following Graph API pagination
+
 1.1.0
 -----
 

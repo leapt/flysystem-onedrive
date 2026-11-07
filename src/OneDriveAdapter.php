@@ -251,16 +251,21 @@ class OneDriveAdapter implements FilesystemAdapter
             $endpoint = $this->applyPathPrefix($path) . ($this->usePath ? ':' : '') . '/children';
         }
 
-        $response = $this->graph->createRequest('GET', $endpoint)->execute();
-        $items = $response->getBody()['value'];
         $results = [];
 
-        foreach ($items as $item) {
-            $results[] = $this->normalizeResponse($item, $this->applyPathPrefix($path));
+        // The Graph API paginates children (200 items per page by default), follow @odata.nextLink until exhausted
+        while (null !== $endpoint) {
+            $body = $this->graph->createRequest('GET', $endpoint)->execute()->getBody();
 
-            if ($deep && isset($item['folder'])) {
-                $results = array_merge($results, $this->listContents($path . '/' . $item['name'], true));
+            foreach ($body['value'] as $item) {
+                $results[] = $this->normalizeResponse($item, $this->applyPathPrefix($path));
+
+                if ($deep && isset($item['folder'])) {
+                    $results = array_merge($results, $this->listContents($path . '/' . $item['name'], true));
+                }
             }
+
+            $endpoint = $body['@odata.nextLink'] ?? null;
         }
 
         return $results;
