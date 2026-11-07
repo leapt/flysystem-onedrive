@@ -214,6 +214,32 @@ class OneDriveAdapterTest extends TestCase
         $this->oneDriveAdapter->listContents('/test');
     }
 
+    public function testListContentsFollowsNextLink(): void
+    {
+        $nextLink = 'https://graph.microsoft.com/v1.0/me/drive/root:/test:/children?$skiptoken=abc';
+        $firstPage = self::createStub(GraphResponse::class);
+        $firstPage->method('getBody')->willReturn([
+            'value'           => [['name' => 'a.txt', 'size' => 1, 'lastModifiedDateTime' => '2022-01-01T01:00:00Z']],
+            '@odata.nextLink' => $nextLink,
+        ]);
+        $secondPage = self::createStub(GraphResponse::class);
+        $secondPage->method('getBody')->willReturn([
+            'value' => [['name' => 'b.txt', 'size' => 2, 'lastModifiedDateTime' => '2022-01-01T01:00:00Z']],
+        ]);
+
+        $graph = $this->createMock(Graph::class);
+        $firstRequest = self::createStub(GraphRequest::class);
+        $firstRequest->method('execute')->willReturn($firstPage);
+        $secondRequest = self::createStub(GraphRequest::class);
+        $secondRequest->method('execute')->willReturn($secondPage);
+        $graph->expects($this->exactly(2))->method('createRequest')
+            ->willReturnCallback(static fn (string $method, string $endpoint): GraphRequest => $nextLink === $endpoint ? $secondRequest : $firstRequest);
+
+        $contents = (new OneDriveAdapter($graph))->listContents('/test');
+
+        self::assertSame(['test/a.txt', 'test/b.txt'], array_map(static fn ($item) => $item->path(), [...$contents]));
+    }
+
     private function makeGraphRequestExecuteMethodThrowException(): void
     {
         $this->graphRequest->method('execute')->willThrowException(new ClientException('404', self::createStub(Request::class), self::createStub(Response::class)));
